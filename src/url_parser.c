@@ -7,15 +7,8 @@
 #include <arpa/inet.h>
 #include <stdbool.h>
 
-typedef struct url_parser_url {
-	char *protocol;
-	char *host;
-	int port;
-	char *path;
-	char *query_string;
-	int host_exists;
-	char *host_ip;
-} url_parser_url_t;
+#include "url_parser.h"
+
 
 void free_parsed_url(url_parser_url_t *url_parsed) {
 	if (url_parsed->protocol)
@@ -122,6 +115,19 @@ int parse_url(char *url, bool verify_host, url_parser_url_t *parsed_url) {
 	free(local_url);
 	free(host_port);
 	return 0;
+}
+
+int merge_url(url_parser_url_t* parsed_url,char *buffer,int len)
+{
+    int ret = 0;
+    
+    /* protocal://host:port/path */
+    ret =  snprintf(buffer,len,"%s://%s:%d%s",
+            parsed_url->protocol?parsed_url->protocol:"http",
+            parsed_url->host,
+            parsed_url->port?parsed_url->port:80,
+            parsed_url->path?parsed_url->path:"/");
+    return ret;
 }
 
 #if UNIT_TEST

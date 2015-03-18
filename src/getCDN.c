@@ -9,6 +9,7 @@
 
 #include "url.h"
 #include "net.h"
+#include "url_parser.h"
 
 
 #define NETPROBE_URL        "http://bcs.duapp.com/wifiauth/data/data_1M"
@@ -60,9 +61,6 @@ int http_probe(struct cdn_http_request *httpresq,struct cdn_http_response *httpr
   unsigned long long  download_speed;
   struct curl_slist *chunk;
   char *strhost;
-
-
-
 
   url = httpresq->url;
   host = httpresq->host;
@@ -116,6 +114,7 @@ int http_probe(struct cdn_http_request *httpresq,struct cdn_http_response *httpr
 
 int main(int argc,char *argv[])
 {
+    int ret = 0;
 	char *url = NULL;
 	struct cdn_http_request  *httpresq;
 	struct cdn_http_response  *httpresp;
@@ -124,9 +123,8 @@ int main(int argc,char *argv[])
     void *addr;
     char *ipver;
     char ipstr[INET6_ADDRSTRLEN];
-    char *new_url;
 
-    url_data_t *data = NULL;
+    url_parser_url_t *parsed_url = NULL;
 	if(argc == 2)
 	{
 		url = argv[1];
@@ -145,19 +143,28 @@ int main(int argc,char *argv[])
 	{
 		goto mem_free;
 	}
-    data = url_parse(url);
-    if(!data)
+    parsed_url = (url_parser_url_t *)malloc(sizeof(url_parser_url_t));
+    if(!parsed_url)
     {
+        goto mem_free;
+    }
+    ret = parse_url(url,false,parsed_url);
+    if(ret)
+    {
+        if(parsed_url)
+        {
+            free_parsed_url(parsed_url);
+        }
         free(httpresq);
         free(httpresp);
         return -1;
     }
-    strncpy(httpresq->host,data->host,MAX_URL_LEN);
+    strncpy(httpresq->host,parsed_url->host,MAX_URL_LEN);
     memset(&hints,0x00,sizeof(hints));
     hints.ai_family =  AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    status = host_isipstr(data->host);
+    status = host_isipstr(parsed_url->host);
     if(status != 0)
     {
         strncpy(httpresq->url,url,MAX_URL_LEN);
@@ -175,15 +182,17 @@ int main(int argc,char *argv[])
         }
         goto mem_free;
     }
-        
-    status = getaddrinfo(data->host,NULL,&hints,&res);
+    status = getaddrinfo(parsed_url->host,NULL,&hints,&res);
     if(status  != 0)
     {
+        if(parsed_url)
+        {
+            free_parsed_url(parsed_url);
+        }
         free(httpresq);
         free(httpresp);
         return -2;
     }
-    
     /* get from all ip of hosts */
     for(p = res;p != NULL ; p = p->ai_next)
     {
@@ -194,10 +203,14 @@ int main(int argc,char *argv[])
         struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
         addr = &(ipv4->sin_addr);
         inet_ntop(p->ai_family,addr,ipstr,sizeof(ipstr));
-        strcpy(data->host,ipstr);
-        new_url  =  url_data_merge(data);
-        printf("%s\n",new_url);
-        strncpy(httpresq->url,url,MAX_URL_LEN);
+        /* change host url */
+        strcpy(parsed_url->host,ipstr);
+        ret = merge_url(parsed_url,httpresq->url,MAX_URL_LEN-1);
+        if(!ret)
+        {
+            continue;
+        }
+        printf("%s\n",httpresq->url);
         http_probe(httpresq,httpresp);
         if(httpresp->ret)
         {
@@ -210,13 +223,15 @@ int main(int argc,char *argv[])
             printf("filesize is: %llu\n",httpresp->file_size);
             printf("speed is: %llu\n",httpresp->download_speed);
         }
-        free(new_url);
-        new_url = NULL;
     }
     freeaddrinfo(res);
 
 mem_free:
 	free(httpresq);
 	free(httpresp);
+    if(parsed_url)
+    {
+        free_parsed_url(parsed_url);
+    }
 	return 0;
 }
