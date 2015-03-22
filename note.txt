@@ -1,0 +1,14 @@
+1.接收输入的URL
+2.解析URL（拆解URL，例如http://www.baidu.com/favcon.ico,
+  分解为协议http主机名称:www.baidu.com资源路径/favcon.ico。
+3.判断主机名是不是ip地址,如果是ip地址，直接开始探测。
+4.对于域名，获取域名的所有ip地址。 
+  对其中每一个ip地址，进行探测。
+5.对所有获取到的信息进行处理。可以写入数据库，也可以输出到
+  终端。
+
+CDN需要设置一个http的头信息
+   例如host:www.baidu.com
+
+所有http GET请求代码已经使用curl 的功能实现。更为简单健壮。
+
