@@ -1,3 +1,10 @@
+/**
+ * @file url_parser.c
+ * @brief parser url
+ * @author freeCoder
+ * @version You can read,copy and modify this code.It's all ok.
+ * @date 2015-03-22
+ */
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

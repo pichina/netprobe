@@ -1,6 +1,6 @@
 CC:=gcc
-CFLAGS:=`curl-config  --cflags`   -g
-LDFLAGS:=`curl-config --libs`   -lsqlite3
+CFLAGS:=
+LDFLAGS:=-lcurl   -lsqlite3
 
 bins:=gethttp getCDN
 

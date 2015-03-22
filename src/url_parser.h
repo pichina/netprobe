@@ -1,23 +1,12 @@
+/**
+ * @file url_parser.h
+ * @brief 
+ * @author freeCoder
+ * @version You can read,copy and modify this code.It's all ok.
+ * @date 2015-03-22
+ */
 #ifndef URL_PARSER_H
 #define URL_PARSER_H
-/*
- * =====================================================================================
- *
- *       Filename:  url_parser.h
- *
- *    Description:  
- *
- *        Version:  1.0
- *        Created:  2015年03月18日 21时24分39秒
- *       Revision:  none
- *       Compiler:  gcc
- *
- *         Author:  YOUR NAME (), 
- *   Organization:  
- *
- * =====================================================================================
- */
-
 typedef struct url_parser_url {
 	char *protocol;
 	char *host;

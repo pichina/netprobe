@@ -1,3 +1,10 @@
+/**
+ * @file getCDN.c
+ * @brief CDN probe
+ * @author freeCoder
+ * @version 0.1
+ * @date 2015-03-22
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,7 +21,16 @@
 
 
 
-
+/**
+ * @brief callback function for get 
+ *
+ * @param contents
+ * @param size
+ * @param nmemb
+ * @param userp
+ *
+ * @return real size
+ */
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
     size_t realsize = size * nmemb;
@@ -24,6 +40,14 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
     return realsize;
 }
 
+/**
+ * @brief probe process function
+ *
+ * @param httpresq 
+ * @param httpresp
+ *
+ * @return 
+ */
 int http_probe(struct cdn_http_request *httpresq,struct cdn_http_response *httpresp)
 {
     CURL *curl_handle;
@@ -31,9 +55,6 @@ int http_probe(struct cdn_http_request *httpresq,struct cdn_http_response *httpr
     size_t filesize;
     char *url;
     char *host;
-    struct timeval start_tm,end_tm;
-    unsigned long long elapsed;
-    unsigned long long  download_speed;
     struct curl_slist *chunk;
     char *strhost;
 
@@ -41,7 +62,6 @@ int http_probe(struct cdn_http_request *httpresq,struct cdn_http_response *httpr
     host = httpresq->host;
     filesize = 0;
     elapsed = 0;
-    download_speed = 0;
     strhost = (char *)malloc(MAX_HOST_LEN*2);
     snprintf(strhost,MAX_HOST_LEN*2,"Host: %s",host);
     chunk = NULL;
@@ -54,13 +74,13 @@ int http_probe(struct cdn_http_request *httpresq,struct cdn_http_response *httpr
     curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&filesize);
     curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER,0L);
     curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST,0L);
+	/* very important */
+	/* set Http header host:xxxxx */
     curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER,chunk);
     /* Get begin */
-    gettimeofday(&start_tm,NULL);
     res = curl_easy_perform(curl_handle);
     /* Get end */
-    gettimeofday(&end_tm,NULL);
-    elapsed = (end_tm.tv_sec - start_tm.tv_sec)*1000000LL+(end_tm.tv_usec - start_tm.tv_usec);
+	/* If failed,set all probe parameter to 0 */
     if(res != CURLE_OK)
     {
         httpresp->ret = PROBE_FAILED;
@@ -76,7 +96,7 @@ int http_probe(struct cdn_http_request *httpresq,struct cdn_http_response *httpr
         httpresp->speed_upload = 0;
         httpresp->speed_download = 0;
     }
-    else 
+    else  /*Success,set all probe parameter of probe */
     {
         /* Probe begin */
         res = curl_easy_getinfo(curl_handle,CURLINFO_HTTP_CONNECTCODE,&httpresp->response_code);
@@ -114,10 +134,19 @@ int http_probe(struct cdn_http_request *httpresq,struct cdn_http_response *httpr
     curl_slist_free_all(chunk);
     curl_global_cleanup();
     free(strhost);
+	return 0;
 }
 
 
 
+/**
+ * @brief 
+ *
+ * @param argc
+ * @param argv[]
+ *
+ * @return 
+ */
 int main(int argc,char *argv[])
 {
     int ret = 0;
@@ -154,6 +183,7 @@ int main(int argc,char *argv[])
     {
         goto mem_free;
     }
+	/* parse url */
     ret = parse_url(url,false,parsed_url);
     if(ret)
     {
@@ -181,15 +211,18 @@ int main(int argc,char *argv[])
     memset(&hints,0x00,sizeof(hints));
     hints.ai_family =  AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
+	/* if host is a ip address ,one probe and return */
     status = host_isipstr(parsed_url->host);
     if(status != 0)
     {
         strncpy(httpresq->url,url,MAX_URL_LEN);
         http_probe(httpresq,httpresp);
+		/* export result to console and sqlite */
         console_export(httpresq,httpresp);
         sqlite_export(httpresq,httpresp);
         goto mem_free;
     }
+	/* use dns to convert host to ip address */
     status = getaddrinfo(parsed_url->host,NULL,&hints,&res);
     if(status  != 0)
     {
@@ -220,6 +253,7 @@ int main(int argc,char *argv[])
         }
         http_probe(httpresq,httpresp);
         //printf("%s\n",httpresp->error);
+		/* export result to console and sqlite */
         console_export(httpresq,httpresp);
         sqlite_export(httpresq,httpresp);
     }

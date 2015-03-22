@@ -1,19 +1,9 @@
-/*
- * =====================================================================================
- *
- *       Filename:  io_sqlite.c
- *
- *    Description:  
- *
- *        Version:  1.0
- *        Created:  2015年03月20日 23时37分06秒
- *       Revision:  none
- *       Compiler:  gcc
- *
- *         Author:  YOUR NAME (), 
- *   Organization:  
- *
- * =====================================================================================
+/**
+ * @file io_sqlite.c
+ * @brief 
+ * @author freeCoder
+ * @version You can read,copy and modify this code.It's all ok.
+ * @date 2015-03-22
  */
 #include <stdio.h>
 #include <string.h>

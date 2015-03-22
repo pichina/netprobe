@@ -1,8 +1,21 @@
+/**
+ * @file net.c
+ * @brief 
+ * @author freeCoder
+ * @version You can read,copy and modify this code.It's all ok.
+ * @date 2015-03-22
+ */
 #include <stdlib.h>
 #include "net.h"
 
-int
-host_isipstr(char *host)
+/**
+ * @brief check the host is a ip addrss string
+ *
+ * @param host the host of the uri
+ *
+ * @return 
+ */
+int host_isipstr(char *host)
 {
     unsigned char buf[sizeof(struct in6_addr)];
     int domain,s;

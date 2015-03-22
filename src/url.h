@@ -1,3 +1,10 @@
+/**
+ * @file url.h
+ * @brief 
+ * @author freeCoder
+ * @version You can read,copy and modify this code.It's all ok.
+ * @date 2015-03-22
+ */
 #ifndef URL_H
 #define URL_H 1
 

@@ -1,3 +1,10 @@
+/**
+ * @file gethttp.c
+ * @brief 
+ * @author freeCoder
+ * @version You can read,copy and modify this code.It's all ok.
+ * @date 2015-03-22
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,6 +35,16 @@ struct http_response{
 
 
 
+/**
+ * @brief 
+ *
+ * @param contents
+ * @param size
+ * @param nmemb
+ * @param userp
+ *
+ * @return 
+ */
 static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
   size_t realsize = size * nmemb;
@@ -37,6 +54,14 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
   return realsize;
 }
 
+/**
+ * @brief 
+ *
+ * @param httpresq
+ * @param httpresp
+ *
+ * @return 
+ */
 int http_probe(struct http_request *httpresq,struct http_response *httpresp)
 {
   CURL *curl_handle;
@@ -88,6 +113,14 @@ int http_probe(struct http_request *httpresq,struct http_response *httpresp)
   curl_global_cleanup();
 }
 
+/**
+ * @brief 
+ *
+ * @param argc
+ * @param argv[]
+ *
+ * @return 
+ */
 int main(int argc,char *argv[])
 {
 	char *url = NULL;
