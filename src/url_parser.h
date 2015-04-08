@@ -7,6 +7,13 @@
  */
 #ifndef URL_PARSER_H
 #define URL_PARSER_H
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <stdbool.h>
+
 typedef struct url_parser_url {
 	char *protocol;
 	char *host;

@@ -13,8 +13,6 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-
-int 
-host_isipstr(char *host);
+#include "cdn.h"
 
 #endif

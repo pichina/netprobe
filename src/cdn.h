@@ -47,7 +47,9 @@ struct cdn_http_response{
     char error[ERROR_MSG_LEN];
 };
 
-extern int console_export(struct cdn_http_request *httpresq,struct cdn_http_response *httpresp);
-extern int sqlite_export(struct cdn_http_request *httpresq,struct cdn_http_response *httpresp);
+extern int cdn_console_export(struct cdn_http_request *httpresq,struct cdn_http_response *httpresp);
+extern int cdn_sqlite_export(struct cdn_http_request *httpresq,struct cdn_http_response *httpresp);
+extern int host_isipstr(char *host);
+extern int http_probe(struct cdn_http_request *httpresq,struct cdn_http_response *httpresp);
 
 #endif

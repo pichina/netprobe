@@ -10,13 +10,16 @@
 #include <stdlib.h>
 #include <sqlite3.h>
 #include "cdn.h"
+#include "ping.h"
 
 
 #define NETPROBE_DB_NAME "netprobe.db"
 
-#define NETPROBE_TBL_DROP "DROP TABLE IF EXISTS netprobe"
+#define NETPROBE_TBL_CDN_DROP "DROP TABLE IF EXISTS HTTP"
+#define NETPROBE_TBL_PING_DROP "DROP TABLE IF EXISTS PING"
 
-#define NETPROBE_TBL_CREATE "CREATE TABLE IF NOT EXISTS netprobe( \
+
+#define NETPROBE_TBL_CDN_CREATE "CREATE TABLE IF NOT EXISTS HTTP( \
                         id INTEGER PRIMARY KEY AUTOINCREMENT, \
                         url TEXT, \
                         host TEXT, \
@@ -31,13 +34,25 @@
                         speed_download REAL \
                         );"
 
-#define NETPROBE_TBL_INSERT  "INSERT INTO netprobe( \
+#define NETPROBE_TBL_PING_CREATE "CREATE TABLE IF NOT EXISTS PING( \
+                        id INTEGER PRIMARY KEY AUTOINCREMENT, \
+                        hostname TEXT, \
+                        ip TEXT, \
+                        data_length INTEGER, \
+                        timeval INTEGER \
+                        );"
+
+#define NETPROBE_TBL_CDN_INSERT  "INSERT INTO HTTP( \
                 url,host,result,http_code, \
                 namelookup_time,connect_time, \
                 pretransfer_time,size_upload, \
                 size_download,speed_upload, \
                 speed_download) \
                 values(?,?,?,?,?,?,?,?,?,?,?)"
+
+#define NETPROBE_TBL_PING_INSERT  "INSERT INTO PING( \
+                hostname,ip,data_length,timeval) \
+                values(?,?,?,?)"
 
 static int sqlite_init(sqlite3 **pdb)
 {
@@ -59,7 +74,14 @@ static int sqlite_init(sqlite3 **pdb)
         return -2;
     }
 #endif
-    rc = sqlite3_exec(db,NETPROBE_TBL_CREATE,0,0,&err_msg);
+    rc = sqlite3_exec(db,NETPROBE_TBL_CDN_CREATE,0,0,&err_msg);
+    if(rc != SQLITE_OK)
+    {
+        sqlite3_close(db);
+        *pdb = NULL;
+        return -3;
+    }
+    rc = sqlite3_exec(db,NETPROBE_TBL_PING_CREATE,0,0,&err_msg);
     if(rc != SQLITE_OK)
     {
         sqlite3_close(db);
@@ -69,7 +91,8 @@ static int sqlite_init(sqlite3 **pdb)
     *pdb = db;
     return 0;
 }
-int sqlite_export(struct cdn_http_request *httpresq,struct cdn_http_response *httpresp)
+
+int cdn_sqlite_export(struct cdn_http_request *httpresq,struct cdn_http_response *httpresp)
 {
     sqlite3 *db;
     sqlite3_stmt *stmt;
@@ -83,7 +106,7 @@ int sqlite_export(struct cdn_http_request *httpresq,struct cdn_http_response *ht
         ret = -1;
         goto clean_exit;
     }
-    rc = sqlite3_prepare_v2(db,NETPROBE_TBL_INSERT,-1,&stmt,NULL);
+    rc = sqlite3_prepare_v2(db,NETPROBE_TBL_CDN_INSERT,-1,&stmt,NULL);
     if(SQLITE_OK != rc)
     {
         ret = -2;
@@ -112,6 +135,60 @@ clean_exit:
     if(!ret)
     {
         printf("export to sqlite database "NETPROBE_DB_NAME);
+    }
+    if(db)
+    {
+        sqlite3_close(db);
+        db = NULL;
+    }
+    return ret;
+}
+
+
+
+int ping_sqlite_export(struct ping_task *task)
+{
+    sqlite3 *db;
+    sqlite3_stmt *stmt;
+    int rc;
+    int ret = 0;
+    double timeval_avg = 0;
+    int i = 0;
+
+    for(i = 0;i < TRY_COUNT;i++)
+    {
+        timeval_avg += task->timeval[i];
+    }
+    timeval_avg  = timeval_avg/TRY_COUNT;
+    db = NULL;
+    rc = sqlite_init(&db);
+    if(SQLITE_OK != rc)
+    {
+        ret = -1;
+        goto clean_exit;
+    }
+    rc = sqlite3_prepare_v2(db,NETPROBE_TBL_PING_INSERT,-1,&stmt,NULL);
+    if(SQLITE_OK != rc)
+    {
+        ret = -2;
+        goto clean_exit;
+    }
+    sqlite3_bind_text(stmt,1,task->hostname,-1,NULL);
+    sqlite3_bind_text(stmt,2,task->send_ip,-1,NULL);
+    sqlite3_bind_int(stmt,3,task->data_length);
+    sqlite3_bind_double(stmt,4,timeval_avg);
+
+    rc = sqlite3_step(stmt);
+    if(SQLITE_OK != rc && SQLITE_DONE !=rc && SQLITE_ROW != rc)
+    {
+        ret = -3;
+        goto clean_exit;
+    }
+    ret = 0;
+clean_exit:
+    if(!ret)
+    {
+        printf("export to sqlite database "NETPROBE_DB_NAME"\n");
     }
     if(db)
     {

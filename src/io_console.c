@@ -9,8 +9,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include "cdn.h"
+#include "ping.h"
 
-int console_export(struct cdn_http_request *httpresq,struct cdn_http_response *httpresp)
+int cdn_console_export(struct cdn_http_request *httpresq,struct cdn_http_response *httpresp)
 {
     char table_header[132]={0,};
     char line_header[62]={0,};
@@ -50,5 +51,21 @@ int console_export(struct cdn_http_request *httpresq,struct cdn_http_response *h
     printf("|%30s|%30f|\n","speed download(kbyte/sec)",httpresp->speed_download);
     printf("|%61s|\n",line_header);
     return 0;
+}
+
+int ping_console_export(struct ping_task *task)
+{
+    int i = 0;
+    printf( "PING %s (%s): %d data bytes\n", task->hostname, task->send_ip, DATA_LENGTH);
+    for(i = 0;i < TRY_COUNT;i++)
+    {
+        printf( "%d bytes from %s: icmp_seq=%u ttl=%d time=%.3f ms\n",
+                task->data_length,
+                task->send_ip,
+                task->seq[i],
+                task->ttl[i],
+                task->timeval[i]
+              );
+    }
 }
 
