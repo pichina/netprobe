@@ -2,15 +2,19 @@ CC:=gcc
 CFLAGS:= -g
 LDFLAGS:=-lcurl   -lsqlite3
 
-bins:=gethttp getCDN ping
+bins:=gethttp getCDN mping url_parser_tool
 
 all:$(bins)
-ping:ping.o io_console.o io_sqlite.o
+mping:ping.o io_console.o io_sqlite.o
 	$(CC) $(LDFLAGS) -o $@ $^
 gethttp:gethttp.o net.o url_parser.o io_console.o io_sqlite.o
 	$(CC) $(LDFLAGS) -o $@ $^
 getCDN:getCDN.o net.o url_parser.o io_console.o io_sqlite.o
 	$(CC) $(LDFLAGS) -o $@ $^
+url_parser_tool:url_parser_tool.o url_parser.o
+	$(CC) $(LDFLAGS) -o $@ $^
+url_parser_tool.o:url_parser_tool.c
+	$(CC) -c $(CFLAGS)  $^
 gethttp.o:gethttp.c
 	$(CC) -c $(CFLAGS)  $^
 getCDN.o:getCDN.c

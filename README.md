@@ -9,5 +9,5 @@ Openwrt netprobe tools.
 
 #ping
 
-#traceroute
+#netprobe
 

@@ -79,7 +79,7 @@ int main(int argc,char *argv[])
     http_probe(httpresq,httpresp);
     /* export result to console and sqlite */
     cdn_console_export(httpresq,httpresp);
-    cdn_sqlite_export(httpresq,httpresp);
+    http_sqlite_export(httpresq,httpresp);
 
 
 mem_free:
