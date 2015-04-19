@@ -22,11 +22,13 @@ then
 	echo "Usage $0  url"
 	exit 1
 fi
+export PATH=$PATH:$(PWD)
 URL=$1
-HOST=$(./url_parser_tool  $URL)
+HOST=$(url_parser_tool  $URL)
 if [ $? != 0 ]
 then
-	echo "ok"
+	echo "parse error."
+	exit  2
 fi
 echo "$URL"
 echo "host:$HOST"
