@@ -53,6 +53,7 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
  */
 int main(int argc,char *argv[])
 {
+    int ret = 0;
 	char *url = NULL;
 	struct cdn_http_request  *httpresq = NULL;
 	struct cdn_http_response  *httpresp = NULL;

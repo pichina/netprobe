@@ -169,8 +169,9 @@ int main(int argc, char **argv) {
     struct timeval receive_time;
     char receive_ip[INET_ADDRSTRLEN];
 
-    while ( try++ < TRY_COUNT ) {
+    while ( try < TRY_COUNT ) {
         ssize_t n = recvmsg(sock, &msg, 0);
+		task.lost[try] = 0;
 
         if (n > 0) {
             struct ip *ip_packet = (struct ip *)receive_buffer;
@@ -198,7 +199,8 @@ int main(int argc, char **argv) {
                         task.seq[try] = icmp_packet->icmp_seq;
                         task.ttl[try] = ip_packet->ip_ttl;
                         task.timeval[try] = timeval_to_ms(&receive_time) - timeval_to_ms(send_time);
-                    }
+						task.lost[try] = 0;
+					}
                 }
             }
         }
@@ -207,9 +209,11 @@ int main(int argc, char **argv) {
             task.seq[try] = 0;
             task.seq[try] = 0;
             task.timeval[try] = 0;
+			task.lost[try] = 1;
         }
+		try++;
     }
-    //ping_console_export(&task);
+    ping_console_export(&task);
     ping_sqlite_export(&task);
 
     return EXIT_SUCCESS;

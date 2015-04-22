@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ################################################
 #
 # file io_sqlite.c
@@ -22,7 +22,7 @@ then
 	echo "Usage $0  url"
 	exit 1
 fi
-export PATH=$PATH:$(PWD)
+export PATH=$PATH:.
 URL=$1
 HOST=$(url_parser_tool  $URL)
 if [ $? != 0 ]

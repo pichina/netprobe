@@ -26,5 +26,6 @@ struct ping_task{
     unsigned int seq[10];
     int ttl[10];
     double  timeval[10];
+	int  lost[10];
 };
 #endif

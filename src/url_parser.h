@@ -25,6 +25,6 @@ typedef struct url_parser_url {
 } url_parser_url_t;
 
 int parse_url(char *url, bool verify_host, url_parser_url_t *parsed_url) ;
-int merge_url(url_parser_url_t* parsed_url,char *buffer,int len);
+int merge_url(url_parser_url_t* parsed_url,char *host,char *buffer,int len);
 
 #endif

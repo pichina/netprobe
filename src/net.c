@@ -81,6 +81,7 @@ int http_probe(struct cdn_http_request *httpresq,struct cdn_http_response *httpr
 
     url = httpresq->url;
     host = httpresq->host;
+
     filesize = 0;
     strhost = (char *)malloc(MAX_HOST_LEN*2);
     snprintf(strhost,MAX_HOST_LEN*2,"Host: %s",host);
@@ -122,6 +123,12 @@ int http_probe(struct cdn_http_request *httpresq,struct cdn_http_response *httpr
         res = curl_easy_getinfo(curl_handle,CURLINFO_HTTP_CONNECTCODE,&httpresp->response_code);
         if(CURLE_OK != res)
             httpresp->response_code = 0;
+		char *ip_str;
+        res = curl_easy_getinfo(curl_handle,CURLINFO_PRIMARY_IP,&ip_str);
+        if(CURLE_OK != res)
+            httpresq->host[0] = 0;
+		else
+			strncpy(httpresq->host,ip_str,MAX_HOST_LEN);
         res = curl_easy_getinfo(curl_handle,CURLINFO_TOTAL_TIME,&httpresp->total_time);
         if(CURLE_OK != res)
             httpresp->total_time = 0;

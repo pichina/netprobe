@@ -62,7 +62,7 @@ int parse_url(char *url, bool verify_host, url_parser_url_t *parsed_url) {
 	token_host = strtok_r(host_port, ":", &host_token_ptr);
 	parsed_url->host_ip = NULL;
 	if (token_host) {
-		parsed_url->host = (char *) malloc(sizeof(char) * strlen(token_host) + 1);
+		parsed_url->host = (char *)malloc(sizeof(char) * strlen(token_host) + 1);
 		strcpy(parsed_url->host, token_host);
 
 		if (verify_host) {
@@ -95,17 +95,19 @@ int parse_url(char *url, bool verify_host, url_parser_url_t *parsed_url) {
 	token = strtok_r(NULL, "?", &token_ptr);
 	parsed_url->path = NULL;
 	if (token) {
-		path = (char *) realloc(path, sizeof(char) * (strlen(token) + 2));
+		path = (char *) malloc(sizeof(char) * (strlen(token) + 2));
 		strcpy(path, "/");
 		strcat(path, token);
 
+		//printf("path:%d, len:%d\n",path,strlen(path));
 		parsed_url->path = (char *) malloc(sizeof(char) * strlen(path) + 1);
 		strncpy(parsed_url->path, path, strlen(path));
 
 		free(path);
+		path = NULL;
 	} else {
-		parsed_url->path = (char *) malloc(sizeof(char) * 2);
-		strcpy(parsed_url->path, "/");
+		parsed_url->path = (char *) malloc(sizeof(char)*2);
+		strncpy(parsed_url->path, "/",1);
 	}
 
 	token = strtok_r(NULL, "?", &token_ptr);
@@ -124,14 +126,14 @@ int parse_url(char *url, bool verify_host, url_parser_url_t *parsed_url) {
 	return 0;
 }
 
-int merge_url(url_parser_url_t* parsed_url,char *buffer,int len)
+int merge_url(url_parser_url_t* parsed_url,char *host,char *buffer,int len)
 {
     int ret = 0;
     
     /* protocal://host:port/path */
     ret =  snprintf(buffer,len,"%s://%s:%d%s",
             parsed_url->protocol?parsed_url->protocol:"http",
-            parsed_url->host,
+            host,
             parsed_url->port?parsed_url->port:80,
             parsed_url->path?parsed_url->path:"/");
     return ret;
@@ -140,6 +142,7 @@ int merge_url(url_parser_url_t* parsed_url,char *buffer,int len)
 #if UNIT_TEST
 int main(int argc, char **argv) {
 	int error;
+	int i = 0;
 	url_parser_url_t *parsed_url;
 
 	if (argc == 1) {
@@ -147,7 +150,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	for (int i = 1; i < argc; i++) {
+	for (i = 1; i < argc; i++) {
 		parsed_url = (url_parser_url_t *) malloc(sizeof(url_parser_url_t));
 		error = parse_url(argv[i], true	, parsed_url);
 		if (error != 0) {

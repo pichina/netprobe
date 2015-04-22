@@ -36,6 +36,8 @@ int cdn_console_export(struct cdn_http_request *httpresq,struct cdn_http_respons
     }
     printf("|%30s|%30ld|\n","http code",httpresp->response_code);
     printf("|%61s|\n",line_header);
+    printf("|%30s|%30f|\n","total time",httpresp->total_time);
+    printf("|%61s|\n",line_header);
     printf("|%30s|%30f|\n","namelookup time",httpresp->namelookup_time);
     printf("|%61s|\n",line_header);
     printf("|%30s|%30f|\n","connect time",httpresp->connect_time);
@@ -56,16 +58,12 @@ int cdn_console_export(struct cdn_http_request *httpresq,struct cdn_http_respons
 int ping_console_export(struct ping_task *task)
 {
     int i = 0;
-    printf( "PING %s (%s): %d data bytes\n", task->hostname, task->send_ip, DATA_LENGTH);
+	int lost_count = 0;
+
     for(i = 0;i < TRY_COUNT;i++)
     {
-        printf( "%d bytes from %s: icmp_seq=%u ttl=%d time=%.3f ms\n",
-                task->data_length,
-                task->send_ip,
-                task->seq[i],
-                task->ttl[i],
-                task->timeval[i]
-              );
+		lost_count += task->lost[i];
     }
+	printf("%d packets transmitted, %d packet loss\n",TRY_COUNT,lost_count);
 }
 

@@ -21,7 +21,7 @@
 #define NETPROBE_URL        "http://bcs.duapp.com/wifiauth/data/data_1M"
 #define NETPROBE_USERAGENT  "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
 #define MAX_URL_LEN 1024
-#define MAX_HOST_LEN 128
+#define MAX_HOST_LEN 512
 #define ERROR_MSG_LEN 1024
 enum NETPROBE_CODE
 {

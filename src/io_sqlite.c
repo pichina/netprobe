@@ -26,6 +26,7 @@
                         host TEXT, \
                         result TEXT, \
                         http_code INTEGER, \
+						total_time REAL,   \
                         namelookup_time REAL, \
                         connect_time REAL, \
                         pretransfer_time REAL, \
@@ -42,6 +43,7 @@
                         host TEXT, \
                         result TEXT, \
                         http_code INTEGER, \
+						total_time REAL,   \
                         namelookup_time REAL, \
                         connect_time REAL, \
                         pretransfer_time REAL, \
@@ -56,29 +58,30 @@
                         hostname TEXT, \
                         ip TEXT, \
                         data_length INTEGER, \
-                        timeval INTEGER \
+                        timeval INTEGER, \
+						lost INTEGER \
                         );"
 
 #define NETPROBE_TBL_HTTP_INSERT  "INSERT INTO HTTP( \
                 url,host,result,http_code, \
-                namelookup_time,connect_time, \
+                total_time,namelookup_time,connect_time, \
                 pretransfer_time,size_upload, \
                 size_download,speed_upload, \
                 speed_download) \
-                values(?,?,?,?,?,?,?,?,?,?,?)"
+                values(?,?,?,?,?,?,?,?,?,?,?,?)"
 
 
 #define NETPROBE_TBL_CDN_INSERT  "INSERT INTO CDN( \
                 url,host,result,http_code, \
-                namelookup_time,connect_time, \
+                total_time,namelookup_time,connect_time, \
                 pretransfer_time,size_upload, \
                 size_download,speed_upload, \
                 speed_download) \
-                values(?,?,?,?,?,?,?,?,?,?,?)"
+                values(?,?,?,?,?,?,?,?,?,?,?,?)"
 
 #define NETPROBE_TBL_PING_INSERT  "INSERT INTO PING( \
-                hostname,ip,data_length,timeval) \
-                values(?,?,?,?)"
+                hostname,ip,data_length,timeval,lost) \
+                values(?,?,?,?,?)"
 
 static int sqlite_init(sqlite3 **pdb)
 {
@@ -88,6 +91,7 @@ static int sqlite_init(sqlite3 **pdb)
     rc = sqlite3_open(NETPROBE_DB_NAME,&db);
     if(rc != SQLITE_OK)
     {
+        sqlite3_close(db);
         *pdb = NULL;
         return -1;
     }
@@ -149,13 +153,14 @@ int http_sqlite_export(struct cdn_http_request *httpresq,struct cdn_http_respons
     sqlite3_bind_text(stmt,2,httpresq->host,-1,NULL);
     sqlite3_bind_text(stmt,3,httpresp->ret == PROBE_SUCCESS?"success":"failed",-1,NULL);
     sqlite3_bind_int(stmt,4,(int)httpresp->response_code);
-    sqlite3_bind_double(stmt,5,httpresp->namelookup_time);
-    sqlite3_bind_double(stmt,6,httpresp->connect_time);
-    sqlite3_bind_double(stmt,7,httpresp->pretransfer_time);
-    sqlite3_bind_double(stmt,8,httpresp->size_upload);
-    sqlite3_bind_double(stmt,9,httpresp->size_download);
-    sqlite3_bind_double(stmt,10,httpresp->speed_upload);
-    sqlite3_bind_double(stmt,11,httpresp->speed_download);
+    sqlite3_bind_double(stmt,5,httpresp->total_time);
+    sqlite3_bind_double(stmt,6,httpresp->namelookup_time);
+    sqlite3_bind_double(stmt,7,httpresp->connect_time);
+    sqlite3_bind_double(stmt,8,httpresp->pretransfer_time);
+    sqlite3_bind_double(stmt,9,httpresp->size_upload);
+    sqlite3_bind_double(stmt,10,httpresp->size_download);
+    sqlite3_bind_double(stmt,11,httpresp->speed_upload);
+    sqlite3_bind_double(stmt,12,httpresp->speed_download);
 
     rc = sqlite3_step(stmt);
     if(SQLITE_OK != rc)
@@ -198,17 +203,19 @@ int cdn_sqlite_export(struct cdn_http_request *httpresq,struct cdn_http_response
         ret = -2;
         goto clean_exit;
     }
+	
     sqlite3_bind_text(stmt,1,httpresq->url,-1,NULL);
     sqlite3_bind_text(stmt,2,httpresq->host,-1,NULL);
     sqlite3_bind_text(stmt,3,httpresp->ret == PROBE_SUCCESS?"success":"failed",-1,NULL);
     sqlite3_bind_int(stmt,4,(int)httpresp->response_code);
-    sqlite3_bind_double(stmt,5,httpresp->namelookup_time);
-    sqlite3_bind_double(stmt,6,httpresp->connect_time);
-    sqlite3_bind_double(stmt,7,httpresp->pretransfer_time);
-    sqlite3_bind_double(stmt,8,httpresp->size_upload);
-    sqlite3_bind_double(stmt,9,httpresp->size_download);
-    sqlite3_bind_double(stmt,10,httpresp->speed_upload);
-    sqlite3_bind_double(stmt,11,httpresp->speed_download);
+    sqlite3_bind_double(stmt,5,httpresp->total_time);
+    sqlite3_bind_double(stmt,6,httpresp->namelookup_time);
+    sqlite3_bind_double(stmt,7,httpresp->connect_time);
+    sqlite3_bind_double(stmt,8,httpresp->pretransfer_time);
+    sqlite3_bind_double(stmt,9,httpresp->size_upload);
+    sqlite3_bind_double(stmt,10,httpresp->size_download);
+    sqlite3_bind_double(stmt,11,httpresp->speed_upload);
+    sqlite3_bind_double(stmt,12,httpresp->speed_download);
 
     rc = sqlite3_step(stmt);
     if(SQLITE_OK != rc)
@@ -240,13 +247,20 @@ int ping_sqlite_export(struct ping_task *task)
     int rc;
     int ret = 0;
     double timeval_avg = 0;
+	double lost_count = 0;
+	double lost_avg = 0;
     int i = 0;
 
     for(i = 0;i < TRY_COUNT;i++)
     {
-        timeval_avg += task->timeval[i];
+		if(!task->lost[i])
+		{
+			timeval_avg += task->timeval[i];
+		}
+		lost_count += task->lost[i];
     }
-    timeval_avg  = timeval_avg/TRY_COUNT;
+    timeval_avg  = timeval_avg/(TRY_COUNT-lost_count);
+	lost_avg = lost_count/TRY_COUNT;
     db = NULL;
     rc = sqlite_init(&db);
     if(SQLITE_OK != rc)
@@ -264,6 +278,8 @@ int ping_sqlite_export(struct ping_task *task)
     sqlite3_bind_text(stmt,2,task->send_ip,-1,NULL);
     sqlite3_bind_int(stmt,3,task->data_length);
     sqlite3_bind_double(stmt,4,timeval_avg);
+    sqlite3_bind_double(stmt,4,lost_avg);
+	
 
     rc = sqlite3_step(stmt);
     if(SQLITE_OK != rc && SQLITE_DONE !=rc && SQLITE_ROW != rc)

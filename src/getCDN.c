@@ -104,6 +104,7 @@ int main(int argc,char *argv[])
         strncpy(httpresq->url,url,MAX_URL_LEN);
         http_probe(httpresq,httpresp);
 		/* export result to console and sqlite */
+		httpresp->namelookup_time = 0;
         cdn_console_export(httpresq,httpresp);
         cdn_sqlite_export(httpresq,httpresp);
         goto mem_free;
@@ -131,8 +132,8 @@ int main(int argc,char *argv[])
         addr = &(ipv4->sin_addr);
         inet_ntop(p->ai_family,addr,ipstr,sizeof(ipstr));
         /* change host url */
-        strcpy(parsed_url->host,ipstr);
-        ret = merge_url(parsed_url,httpresq->url,MAX_URL_LEN-1);
+        //strncpy(parsed_url->host,ipstr,MAX_HOST_LEN);
+        ret = merge_url(parsed_url,ipstr,httpresq->url,MAX_URL_LEN-1);
         if(!ret)
         {
             continue;
@@ -140,6 +141,7 @@ int main(int argc,char *argv[])
         http_probe(httpresq,httpresp);
         //printf("%s\n",httpresp->error);
 		/* export result to console and sqlite */
+		httpresp->namelookup_time = 0;
         cdn_console_export(httpresq,httpresp);
         cdn_sqlite_export(httpresq,httpresp);
     }
@@ -151,6 +153,7 @@ mem_free:
     if(parsed_url)
     {
         free_parsed_url(parsed_url);
+		parsed_url = NULL;
     }
     return 0;
 }
